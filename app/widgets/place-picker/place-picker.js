@@ -6,6 +6,10 @@ class PlacePicker extends Polymer.Element {
 
   static get properties () {
     return {
+      country: {
+        type: String,
+        value: config.country
+      },
       googleMapsApiKey: {
         type: String,
         value: config.map.googleApiKey
@@ -18,7 +22,8 @@ class PlacePicker extends Polymer.Element {
   }
 
   _onGoogleMapsApiLoad () {
-    this.autocomplete = new google.maps.places.Autocomplete(this.$['place-input'])
+    let options = { componentRestrictions: { country: this.country } }
+    this.autocomplete = new google.maps.places.Autocomplete(this.$['place-input'], options)
     google.maps.event.addListener(this.autocomplete, 'place_changed', this._placeChanged.bind(this))
   }
 
