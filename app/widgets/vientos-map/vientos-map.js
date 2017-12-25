@@ -8,21 +8,13 @@ class VientosMap extends Polymer.Element {
       map: {
         type: Object
       },
-      latitude: {
-        type: Number,
-        value: config.map.latitude
-      },
-      longitude: {
-        type: Number,
-        value: config.map.longitude
-      },
-      zoom: {
-        type: Number,
-        value: config.map.zoom
-      },
-      view: {
+      locality: {
         type: Object,
-        observer: '_viewChanged'
+        statePath: 'locality'
+      },
+      currentPlace: {
+        type: Object,
+        observer: '_setView'
       },
       boundingBox: {
         type: Object,
@@ -38,9 +30,13 @@ class VientosMap extends Polymer.Element {
       myAccuracy: {
         type: Number
       },
+      myLocationZoom: {
+        type: Number,
+        value: 15
+      },
       tilelayer: {
         type: String,
-        value: () => { return config.map.tilelayer }
+        value: () => { return config.mapbox }
       }
     }
   }
@@ -54,9 +50,9 @@ class VientosMap extends Polymer.Element {
   _initializeMap ({ createMap, tileLayer, layerGroup, marker, icon, divIcon, toPoint }) {
     this.map = createMap(this.$.map)
     this.meIcon = divIcon({
-      html: '<div id="my-location"></div>',
+      html: '<div id="my-location"></div>'
     })
-    this.map.setView([this.latitude, this.longitude], this.zoom)
+    if (this.currentPlace) this._setView(this.currentPlace)
 
     tileLayer(this.tilelayer).addTo(this.map)
     this.markers = layerGroup().addTo(this.map)
@@ -116,6 +112,15 @@ class VientosMap extends Polymer.Element {
     }, 200)
   }
 
+  _setView (place) {
+    if (this.map && place) {
+      this.map.fitBounds([
+        [place.bounds.southwest.lat, place.bounds.southwest.lng],
+        [place.bounds.northeast.lat, place.bounds.northeast.lng]
+      ])
+    }
+  }
+
   _redrawMarkers (locations, projects, intents, currentPlace) {
     if (this.map && locations) {
       this._drawMarkers(locations, projects, intents, currentPlace)
@@ -159,28 +164,16 @@ class VientosMap extends Polymer.Element {
 
   _showMyLocation () {
     if (this.myLatitude && this.myLongitude) {
-      this.set('view', {
-        latitude: this.myLatitude,
-        longitude: this.myLongitude,
-        zoom: 15 // FIXME move magic number to config
-      })
+      this.map.setView([this.myLatitude, this.myLongitude], this.myLocationZoom)
     } else {
       this.map.locate()
     }
   }
 
   _showFullZoom () {
-    this.set('view', {
-      latitude: config.map.latitude,
-      longitude: config.map.longitude,
-      zoom: config.map.zoom
-    })
+    this._placeSelected(this.locality, this.currentPlace)
     window.history.replaceState({}, '', `${window.location.pathname}${window.location.hash}`)
     window.dispatchEvent(new CustomEvent('location-changed'))
-  }
-
-  _viewChanged (view) {
-    if (this.map) this.map.setView([view.latitude, view.longitude], view.zoom)
   }
 
   ready () {

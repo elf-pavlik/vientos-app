@@ -23,6 +23,7 @@ const config = require('../config.json')
 const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose
 
 const reducer = combineReducers({
+  locality: DataReducers.locality,
   loginProviders: DataReducers.loginProviders,
   projects: DataReducers.projects,
   categories: DataReducers.categories,

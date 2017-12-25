@@ -204,11 +204,10 @@
           name="guide"></vientos-guide>
         </iron-pages>
         <vientos-map
-          view="[[mapView]]"
           locations="[[visiblePlaces]]"
           projects="[[projects]]"
           intents="[[availableIntents]]"
-          current-place="[[currentPlace._id]]"
+          current-place="[[currentPlace]]"
           on-bbox="_updateBoundingBox"
           ></vientos-map>
         <paper-toast id="toast">[[localize(toast.label)]]</paper-toast>

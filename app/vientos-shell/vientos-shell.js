@@ -1,5 +1,5 @@
 /* global EventSource */
-import { ReduxMixin, ActionCreators, util, channelUrl, config } from '../../src/engine.js'
+import { ReduxMixin, ActionCreators, util, channelUrl } from '../../src/engine.js'
 
 const importOrganizationEditor = () => {
   import(/* webpackChunkName: "organization-editor" */ '../editors/organization-editor/organization-editor.html')
@@ -61,6 +61,10 @@ class VientosShell extends Polymer.mixinBehaviors(
         type: Array,
         statePath: 'projects'
       },
+      locality: {
+        type: String,
+        statePath: 'locality'
+      },
       places: {
         type: Array,
         statePath: 'places'
@@ -107,12 +111,8 @@ class VientosShell extends Polymer.mixinBehaviors(
         type: Boolean,
         statePath: 'boundingBoxFilter'
       },
-      mapView: {
-        type: Object
-      },
       geoTag: {
-        type: String,
-        value: config.map.name
+        type: String
       },
       toast: {
         type: String,
@@ -259,6 +259,7 @@ class VientosShell extends Polymer.mixinBehaviors(
   static get observers () {
     return [
       '_routePageChanged(routeData.page)',
+      '_handleLocality(locality)',
       '_updateGeoTag(currentPlace, boundingBox)',
       '_handleMapVisibility(page, wideScreen, showingMap)',
       '_indexProjects(lunr, projects)',
@@ -320,6 +321,7 @@ class VientosShell extends Polymer.mixinBehaviors(
   _smartBack () {
     if (this.history.length === 1) {
       let page = this.history[0].page === 'project' ? 'projects' : 'intents'
+      // TODO handle place
       window.history.pushState({}, '', `/${page}`)
       window.dispatchEvent(new CustomEvent('location-changed'))
     } else {
@@ -423,20 +425,16 @@ class VientosShell extends Polymer.mixinBehaviors(
     if (!['intents', 'projects'].includes(this.page)) return null
     try {
       let place = util.getRef(placeId, places)
-      this._setMapView(place)
       return place
     } catch (e) {
       return null
     }
   }
 
-  _setMapView (place) {
-    if (place) {
-      this.set('mapView', {
-        latitude: place.latitude,
-        longitude: place.longitude,
-        zoom: 14 // FIXME remove magic number
-      })
+  _handleLocality (locality) {
+    if (locality && !this.currentPlace && (this.page === 'projects' || this.page === 'intents')) {
+      window.history.pushState({}, '', `/${this.page}?place=${locality}`)
+      window.dispatchEvent(new CustomEvent('location-changed'))
     }
   }
 
@@ -522,20 +520,11 @@ class VientosShell extends Polymer.mixinBehaviors(
   }
 
   _updateGeoTag (place, boundingBox) {
-    let map = this.$$('vientos-map')
-    if (!map.latitude || // map still loading
-        (Math.abs(map.latitude - config.map.latitude) <= 0.002 &&
-        Math.abs(map.longitude - config.map.longitude) <= 0.002 &&
-        Math.abs(map.zoom - config.map.zoom) <= 0.002)) {
-      if (place) this.set('geoTag', place.address)
-      else this.set('geoTag', config.map.name)
-    } else {
-      // TODO: check if on my current position
-      if (place) {
-        this.set('geoTag', place.address)
-      } else {
-        this.set('geoTag', this.localize('label:custom-map-boundries'))
-      }
+    // TODO: check if on my current position
+    if (place) {
+      this.set('geoTag', place.address)
+    } else if (boundingBox) {
+      this.set('geoTag', this.localize('label:custom-map-boundries'))
     }
   }
 

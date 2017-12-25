@@ -10,9 +10,13 @@ class PlacePicker extends Polymer.Element {
         type: String,
         value: config.country
       },
+      language: {
+        type: String,
+        value: config.language
+      },
       googleMapsApiKey: {
         type: String,
-        value: config.map.googleApiKey
+        value: config.google
       }
     }
   }
@@ -34,6 +38,7 @@ class PlacePicker extends Polymer.Element {
         address: googlePlace.formatted_address,
         latitude: googlePlace.geometry.location.lat(),
         longitude: googlePlace.geometry.location.lng(),
+        bounds: googlePlace.geometry.viewport,
         googlePlaceId: googlePlace.place_id
       }
       this.dispatchEvent(new CustomEvent('picked', { detail: place }))
